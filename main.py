@@ -43,11 +43,7 @@ def process_light_issue(issue):
 
     successfully_processed_issue(issue)
 
-if __name__ == '__main__':
-    support_directory = "./support"
-    if not os.path.exists(support_directory):
-        os.makedirs(support_directory)
-
+def check_issues():
     url = "https://api.github.com/repos/AndrewButtonChecker/Button/issues"
     last_issue_time = get_last_issue_time()
     if last_issue_time:
@@ -73,3 +69,10 @@ if __name__ == '__main__':
             process_light_issue(issue)
         else:
             print("Unknown issue type: " + str(components[0]))
+            
+if __name__ == '__main__':
+    support_directory = "./support"
+    if not os.path.exists(support_directory):
+        os.makedirs(support_directory)
+
+    check_issues()
