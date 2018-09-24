@@ -26,10 +26,12 @@ def get_nanoleaf_token():
 
 
 def update_effect(effect_name):
-    my_aurora = Aurora(get_nanoleaf_ip(), get_nanoleaf_token())
-    my_aurora.on = True
+    aurora = Aurora(get_nanoleaf_ip(), get_nanoleaf_token())
+    aurora.on = True
 
     if effect_name == "Random":
-        my_aurora.effect = my_aurora.effect_random()
+        aurora.effect = my_aurora.effect_random()
+    elif effect_name == "Flash Twice":
+        aurora.identify()
     else:
-        my_aurora.effect = effect_name
+        aurora.effect = effect_name

@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import requests
 
@@ -50,10 +51,11 @@ def successfully_processed_issue(issue):
     file.close()
 
 def process_light_issue(issue):
+    logging.info("process_light_issue")
     issue_title = issue["title"]
     components = issue_title.split("|")
     if len(components) is not 3:
-        print("Inccorrect number of components")
+        logging.error("Incorrect number of components")
         return
 
     light_update_type = components[1]
@@ -62,13 +64,15 @@ def process_light_issue(issue):
 
         if light_effect_name not in get_effects():
             notify("Dorm Room Client", "Unknown Effect: " + light_effect_name)
+            logging.error("Unknown Effect: " + light_effect_name)
         else:
             update_effect(light_effect_name)
+            logging.info("Updated Effect: " + light_effect_name)
             notify("Dorm Room Client", "Updated Effect: " + light_effect_name)
 
         successfully_processed_issue(issue)
     else:
-        print("Unknown Light Effect")
+        logging.error("Unknown Light Effect")
 
 def notify(title, text):
     os.system("""
@@ -76,7 +80,7 @@ def notify(title, text):
               """.format(text, title))
 
 def check_issues():
-    print("Checking issues...")
+    logging.info("Checking issues...")
     url = "https://api.github.com/repos/AndrewDorm/Public/issues"
     last_issue_time = get_last_issue_time()
     if last_issue_time:
@@ -92,21 +96,23 @@ def check_issues():
 
         last_issue_number = get_last_issue_number()
         if last_issue_number and int(last_issue_number) is issue_number:
-            print("Already processed last issue")
-            return
+            logging.warning("Already processed last issue")
+            # return
 
-        print("Processing issue: " + str(issue_number))
+        logging.info("Processing issue: " + str(issue_number))
 
         components = issue_title.split("|")
         if components[0] == "LightUpdate":
             process_light_issue(issue)
         else:
-            print("Unknown issue type: " + str(components[0]))
+            logging.error("Unknown issue type: " + str(components[0]))
 
 if __name__ == '__main__':
     support_directory = "./support"
     if not os.path.exists(support_directory):
         os.makedirs(support_directory)
+
+    logging.basicConfig(filename='support/output.log', level=logging.DEBUG)
 
     # check_issues()
     scheduler = BlockingScheduler()
