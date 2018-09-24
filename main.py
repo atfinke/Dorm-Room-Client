@@ -97,7 +97,7 @@ def check_issues():
         last_issue_number = get_last_issue_number()
         if last_issue_number and int(last_issue_number) is issue_number:
             logging.warning("Already processed last issue")
-            # return
+            return
 
         logging.info("Processing issue: " + str(issue_number))
 
