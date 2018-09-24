@@ -1,16 +1,7 @@
 import support
 import json
 
-path = support.nanoleaf_all_effects_path()
-
-with open(path) as f:
-    data = json.load(f)
-
-animations = data["animations"]
-
-effects = []
-for animation in animations:
-    effects.append(animation["animName"].title())
+effects = support.get_all_effect_names()
 
 effects.sort()
 effects.append("Flash Twice")

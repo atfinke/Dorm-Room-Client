@@ -1,4 +1,5 @@
 import os
+import json
 
 def directory():
     return os.path.expanduser("~/Library/Application Support/Dorm Room Client/")
@@ -36,6 +37,19 @@ def get_nanoleaf_token():
 
     file = open(path, "r")
     return file.readline()
+
+def get_all_effect_names():
+    path = nanoleaf_all_effects_path()
+
+    with open(path) as f:
+        data = json.load(f)
+
+    animations = data["animations"]
+
+    effects = []
+    for animation in animations:
+        effects.append(animation["animName"])
+    return effects
 
 def get_published_effects():
     path = nanoleaf_published_effects_path()
