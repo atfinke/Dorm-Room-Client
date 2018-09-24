@@ -3,50 +3,20 @@ import logging
 import os
 import requests
 
+import support
+
 from datetime import datetime
-from nanoleaf_updater import update_effect
+from nanoleaf_effect_updater import update_effect
 
 from apscheduler.schedulers.blocking import BlockingScheduler
-
-def effects_path():
-    return "./Effects.txt"
-
-def last_issue_time_path():
-    return "./support/last_issue_time.txt"
-
-def last_issue_number_path():
-    return "./support/last_issue_number.txt"
-
-def get_effects():
-    path = effects_path()
-    if not os.path.exists(path):
-        return None
-
-    file = open(path, "r")
-    return file.readline()
-
-def get_last_issue_time():
-    path = last_issue_time_path()
-    if not os.path.exists(path):
-        return None
-
-    file = open(path, "r")
-    return file.readline()
-
-def get_last_issue_number():
-    path = last_issue_number_path()
-    if not os.path.exists(path):
-        return None
-
-    file = open(path, "r")
-    return file.readline()
+from apscheduler.triggers.interval import IntervalTrigger
 
 def successfully_processed_issue(issue):
-    file = open(last_issue_time_path(),"w")
+    file = open(support.last_issue_time_path(),"w")
     file.write(issue["created_at"])
     file.close()
 
-    file = open(last_issue_number_path(),"w")
+    file = open(support.last_issue_number_path(),"w")
     file.write(str(issue["number"]))
     file.close()
 
@@ -62,7 +32,7 @@ def process_light_issue(issue):
     if light_update_type == "Effect":
         light_effect_name = components[2]
 
-        if light_effect_name not in get_effects():
+        if light_effect_name not in support.get_published_effects():
             notify("Dorm Room Client", "Unknown Effect: " + light_effect_name)
             logging.error("Unknown Effect: " + light_effect_name)
         else:
@@ -82,9 +52,9 @@ def notify(title, text):
 def check_issues():
     logging.info("Checking issues...")
     url = "https://api.github.com/repos/AndrewDorm/Public/issues"
-    last_issue_time = get_last_issue_time()
+    last_issue_time = support.get_last_issue_time()
     if last_issue_time:
-        url += '?since=' + get_last_issue_time()
+        url += '?since=' + support.get_last_issue_time()
 
     response = requests.get(url, timeout=10)
     response_json = response.json()
@@ -94,9 +64,9 @@ def check_issues():
         issue_title = issue["title"]
         issue_number = issue["number"]
 
-        last_issue_number = get_last_issue_number()
+        last_issue_number = support.get_last_issue_number()
         if last_issue_number and int(last_issue_number) is issue_number:
-            logging.warning("Already processed last issue")
+            logging.info("Already processed last issue")
             return
 
         logging.info("Processing issue: " + str(issue_number))
@@ -108,15 +78,16 @@ def check_issues():
             logging.error("Unknown issue type: " + str(components[0]))
 
 if __name__ == '__main__':
-    support_directory = "./support"
-    if not os.path.exists(support_directory):
-        os.makedirs(support_directory)
+    support.prepare_directory()
 
-    logging.basicConfig(filename='support/output.log', level=logging.DEBUG)
+    log_file = support.directory() + "output.log"
+
+    logging.basicConfig(filename=log_file, level=logging.INFO)
 
     # check_issues()
     scheduler = BlockingScheduler()
-    scheduler.add_job(check_issues, 'interval', seconds=15)
+    trigger = IntervalTrigger(seconds=15)
+    scheduler.add_job(check_issues, trigger)
     try:
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):
