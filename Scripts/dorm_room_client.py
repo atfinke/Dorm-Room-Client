@@ -3,6 +3,9 @@ import logging
 import os
 import requests
 
+import sys
+import subprocess
+
 import support
 
 from datetime import datetime
@@ -10,6 +13,9 @@ from nanoleaf_effect_updater import update_effect
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+
+GITHUB_USERNAME = os.environ.get('GITHUB_USERNAME')
+GITHUB_PASSWORD = os.environ.get('GITHUB_PASSWORD')
 
 def successfully_processed_issue(issue):
     file = open(support.last_issue_time_path(),"w")
@@ -57,12 +63,17 @@ def notify(title, text):
 
 def check_issues():
     logging.info("Checking issues...")
+
     url = "https://api.github.com/repos/AndrewDorm/Public/issues"
     last_issue_time = support.get_last_issue_time()
     if last_issue_time:
         url += '?since=' + support.get_last_issue_time()
 
-    response = requests.get(url, timeout=10)
+    session = requests.Session()
+
+    session.auth = (GITHUB_USERNAME, GITHUB_PASSWORD)
+
+    response = session.get(url, timeout=10)
     response_json = response.json()
 
     if len(response_json) > 0:
@@ -83,17 +94,24 @@ def check_issues():
         else:
             logging.error("Unknown issue type: " + str(components[0]))
 
+def config_logger():
+    log_file = support.directory() + "output.log"
+    logging.basicConfig(filename=log_file, level=logging.INFO,filemode='w')
+
 if __name__ == '__main__':
     support.prepare_directory()
-
-    log_file = support.directory() + "output.log"
-
-    logging.basicConfig(filename=log_file, level=logging.INFO)
+    config_logger()
 
     # check_issues()
+    if 'darwin' in sys.platform:
+        print('Running \'caffeinate\' on MacOSX to prevent the system from sleeping')
+        subprocess.Popen('caffeinate')
     scheduler = BlockingScheduler()
     trigger = IntervalTrigger(seconds=15)
     scheduler.add_job(check_issues, trigger)
+
+    trigger = IntervalTrigger(days=1)
+    scheduler.add_job(config_logger, trigger)
     try:
         notify("Dorm Room Client", "Started")
         scheduler.start()
