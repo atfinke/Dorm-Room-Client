@@ -44,6 +44,10 @@ def process_light_issue(issue):
                 actual_effect_name = effect
                 break
 
+        if effect is "Random\n" or effect is "Flash Twice":
+            actual_effect_name = effect
+
+
         if not actual_effect_name or actual_effect_name not in support.get_all_effect_names():
             notify("Dorm Room Client", "Unknown Effect: " + light_effect_name)
             logging.error("Unknown Effect: " + light_effect_name)
@@ -79,10 +83,10 @@ def check_issues():
     if len(response_json) > 0:
         issue = response_json[0]
         issue_title = issue["title"]
-        issue_number = issue["number"]
+        issue_number = int(issue["number"])
 
         last_issue_number = support.get_last_issue_number()
-        if last_issue_number and int(last_issue_number) is issue_number:
+        if last_issue_number and int(issue_number) == int(last_issue_number):
             logging.info("Already processed last issue")
             return
 
